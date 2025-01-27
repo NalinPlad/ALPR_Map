@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS searches (
 );
 `;
 
-database.exec("DROP TABLE IF EXISTS departments")
+// database.exec("DROP TABLE IF EXISTS departments")
 database.exec(initDatabase);
 
 
@@ -80,25 +80,25 @@ const text = await response.text();
 const DOM = parse(text);
 
 
-// const depts = list_depts(DOM);
+const depts = list_depts(DOM);
 // console.log(depts)
-const depts = ['Anaheim CA PD',
-  'Anderson CA PD',
-  'Antioch CA PD',
-  'Arcadia CA PD',
-  'Atherton CA PD',
-  'Atwater CA PD',
-  'Auburn CA PD',
-  'Azusa CA PD',
-  'Bakersfield CA PD',
-  'Baldwin Park CA PD',
-  'Beaumont CA PD',
-  'Bell Gardens CA PD']
+// const depts = ['Anaheim CA PD',
+//   'Anderson CA PD',
+//   'Antioch CA PD',
+//   'Arcadia CA PD',
+//   'Atherton CA PD',
+//   'Atwater CA PD',
+//   'Auburn CA PD',
+//   'Azusa CA PD',
+//   'Bakersfield CA PD',
+//   'Baldwin Park CA PD',
+//   'Beaumont CA PD',
+//   'Bell Gardens CA PD']
 
 const audit = get_audit(DOM);
-// console.log(audit);
+console.log(process_audit(audit));
 
-// process.exit();
+process.exit();
 
 // console.log(`Searching ${depts.length} depts...`)
 
@@ -135,7 +135,7 @@ function get_num_searches(DOM) {
         }
     });
 
-    return num
+    return (num == null || isNaN(num.replaceAll(",", ""))) ? null : parseInt(num.replaceAll(",", ""))
 }
 
 function get_num_cameras(DOM) {
@@ -149,7 +149,7 @@ function get_num_cameras(DOM) {
         }
     });
 
-    return num
+    return (num == null || isNaN(num.replaceAll(",", ""))) ? null : parseInt(num.replaceAll(",", ""))
 }
 
 function get_num_vehicles_30_days(DOM) {
@@ -163,7 +163,7 @@ function get_num_vehicles_30_days(DOM) {
         }
     });
 
-    return num
+    return (num == null || isNaN(num.replaceAll(",", ""))) ? null : parseInt(num.replaceAll(",", ""))
 }
 
 
@@ -179,25 +179,39 @@ function get_num_searches_30_days(DOM) {
         }
     });
 
-    return num
+    return (num == null || isNaN(num.replaceAll(",", ""))) ? null : parseInt(num.replaceAll(",", ""))
 }
 
 
 function get_audit(DOM) {
     // console.log(1)
     const labels = DOM.querySelectorAll(".label.col-12");
-    // console.log(labels)
     let csv = null
     labels.forEach(label => {
         if(label.innerText == "Public Search Audit") {
-            csv = label.parentNode.nextSibling.firstChild.firstChild._attrs.href;
+            // console.log(label.parentNode.nextSibling.firstChild.firstChild._attrs)
+            if(label.parentNode.nextSibling.firstChild.firstChild._attrs){
+                csv = label.parentNode.nextSibling.firstChild.firstChild._attrs.href;
+            }
         }
     });
 
     return csv
 }
 
+function process_audit(csv) {
+    const records = []
+    const lines = decodeURIComponent(audit.replaceAll("data:text/plain;charset=utf-8,", "")).split("\n").shift();
+    
+    lines.forEach(line => {
+        
+    });
+
+    return records 
+}
+
 async function process_dept(name){
+    // console.log(name)
     // if(found.includes(slug) || failed.includes(slug)) {
     //     return
     // }
@@ -212,6 +226,7 @@ async function process_dept(name){
 
 
     const url = "https://transparency.flocksafety.com/" + slug
+    // console.log(url)
 
     let num_cams = null
     let num_vehicles = null
