@@ -48,11 +48,24 @@ CREATE TABLE IF NOT EXISTS searches (
 database.exec(initDatabase);
 
 
+
+
+
 const createDepartment = database.prepare(`
     INSERT INTO departments (dept_slug, flock_status, name, camera_count)
     VALUES (?, ?, ?, ?)
     RETURNING last_updated
 `);
+
+const getDepartments = database.prepare(`
+    SELECT dept_slug FROM departments
+`);
+
+
+
+
+let cache_depts = []
+
 
 
 const response = await fetch("https://transparency.flocksafety.com/el-cerrito-ca-pd");
@@ -65,7 +78,7 @@ const depts = list_depts(DOM);
 console.log(`Searching ${depts.length} depts...`)
 depts.forEach(dept => {
     // console.log(dept + " " + gen_slug(dept))
-    test_URL(gen_slug(dept))
+    process_dept(dept)
 })
 
 function gen_slug(dept) {
@@ -114,10 +127,13 @@ function get_audit(DOM) {
     return csv
 }
 
-async function test_URL(slug){
-    if(found.includes(slug) || failed.includes(slug)) {
-        return
-    }
+async function process_dept(name){
+    // if(found.includes(slug) || failed.includes(slug)) {
+    //     return
+    // }
+
+    const slug = gen_slug(name)
+
 
     const url = "https://transparency.flocksafety.com/" + slug
 
@@ -130,6 +146,8 @@ async function test_URL(slug){
     } else {
         failed.push(slug)
     }
+
+    const newDept = createDepartment.get(slug, response.status, name, 0)
 }
 
 // console.log(Assoc_Depts);
