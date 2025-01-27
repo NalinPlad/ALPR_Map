@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS searches (
   search_dept TEXT NOT NULL,
   search_id TEXT PRIMARY KEY, 
   user_id TEXT NOT NULL,
-  time DATETIME NOT NULL,
+  time INTEGER NOT NULL,
   camera_count INTEGER,
   reason TEXT,
 
@@ -63,10 +63,15 @@ const getDepartments = database.prepare(`
     SELECT dept_slug, flock_status, last_updated FROM departments
 `);
 
+const getSearchIds = database.prepare(`
+    SELECT search_id FROM searches
+`);
+
 
 
 
 let cache_depts = getDepartments.all()
+let search_ids = getSearchIds.all()
 
 // console.log(cache_depts[0].last_updated);
 
@@ -100,7 +105,7 @@ console.log(process_audit(audit));
 
 process.exit();
 
-// console.log(`Searching ${depts.length} depts...`)
+console.log(`Searching ${depts.length} depts...`)
 
 for (const dept of depts) {
     await process_dept(dept);
@@ -201,10 +206,23 @@ function get_audit(DOM) {
 
 function process_audit(csv) {
     const records = []
-    const lines = decodeURIComponent(audit.replaceAll("data:text/plain;charset=utf-8,", "")).split("\n").shift();
+    const lines = decodeURIComponent(audit.replaceAll("data:text/plain;charset=utf-8,", "")).split("\n");
+    lines.shift();
     
     lines.forEach(line => {
-        
+        let seg = line.split(",")
+        let ms = new Date(seg[2].slice(1,-1))
+        records.push(
+            {
+                "id": seg[0].slice(1,-1),
+                "u_id": seg[1].slice(1,-1),
+                "time": ms.getTime(),
+                "cam_count": parseInt(seg[3]),
+                "reason": seg[4].slice(1,-1)
+            }
+        );
+
+        // console.log(seg[4])
     });
 
     return records 
