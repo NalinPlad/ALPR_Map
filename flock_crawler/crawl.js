@@ -163,20 +163,22 @@ async function process_dept(name){
 
     const url = "https://transparency.flocksafety.com/" + slug
 
+    let num_cams = null
+
     const response = await fetch(url);
     if(response.status == 200) {
         const text = await response.text();
         const DOM = parse(text)
-        found.push(slug)
-        console.log(`Found ${slug}, ${get_num_searches(DOM)} searches, ${get_audit != null ? "✅" : "no audit"} ${url}`)
-    } else {
-        failed.push(slug)
-    }
+        num_cams = get_num_cameras(DOM);
+        console.log(`Found ${slug}, ${get_num_searches(DOM)} searches, ${num_cams} cameras, ${get_audit != null ? "✅ audit" : "❌ audit"} ${url}`)
+    } 
+    // else {
+    //     failed.push(slug)
+    // }
 
-    // const t = Date()
     // console.log(slug, response.status, name, Date.now(), 0, cache_depts.some(e => e.dept_slug === slug))
-    const newDept = createDepartment.get(slug, response.status, name, Date.now(), 0)
-    console.log(newDept)
+    const newDept = createDepartment.get(slug, response.status, name, Date.now(), num_cams)
+    // console.log(newDept)
     cache_depts.push(newDept);
 }
 
