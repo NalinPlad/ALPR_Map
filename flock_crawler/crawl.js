@@ -19,8 +19,6 @@ import { DatabaseSync } from 'node:sqlite';
 // ' Flock Safety PD Test Org',
 // ' Florida LE Flock Training',
 
-let found = []
-let failed = []
 
 const database = new DatabaseSync('./audit_db');
 
@@ -46,7 +44,7 @@ CREATE TABLE IF NOT EXISTS searches (
 );
 `;
 
-// database.exec("DROP TABLE IF EXISTS departments")
+database.exec("DROP TABLE IF EXISTS departments")
 database.exec(initDatabase);
 
 
@@ -80,8 +78,27 @@ const text = await response.text();
 const DOM = parse(text);
 
 
-const depts = list_depts(DOM);
-console.log(`Searching ${depts.length} depts...`)
+// const depts = list_depts(DOM);
+// console.log(depts)
+const depts = ['Anaheim CA PD',
+  'Anderson CA PD',
+  'Antioch CA PD',
+  'Arcadia CA PD',
+  'Atherton CA PD',
+  'Atwater CA PD',
+  'Auburn CA PD',
+  'Azusa CA PD',
+  'Bakersfield CA PD',
+  'Baldwin Park CA PD',
+  'Beaumont CA PD',
+  'Bell Gardens CA PD']
+
+const audit = get_audit(DOM);
+// console.log(audit);
+
+// process.exit();
+
+// console.log(`Searching ${depts.length} depts...`)
 
 for (const dept of depts) {
     await process_dept(dept);
@@ -140,7 +157,7 @@ function get_audit(DOM) {
     let csv = null
     labels.forEach(label => {
         if(label.innerText == "Public Search Audit") {
-            csv = label.parentNode.nextSibling.firstChild.firstChild.href;
+            csv = label.parentNode.nextSibling.firstChild.firstChild._attrs.href;
         }
     });
 
@@ -170,7 +187,7 @@ async function process_dept(name){
         const text = await response.text();
         const DOM = parse(text)
         num_cams = get_num_cameras(DOM);
-        console.log(`Found ${slug}, ${get_num_searches(DOM)} searches, ${num_cams} cameras, ${get_audit != null ? "✅ audit" : "❌ audit"} ${url}`)
+        console.log(`Found ${slug}, ${get_num_searches(DOM)} searches, ${num_cams} cameras, ${get_audit(DOM) != null ? "✅ audit" : "❌ audit"} ${url}`)
     } 
     // else {
     //     failed.push(slug)
