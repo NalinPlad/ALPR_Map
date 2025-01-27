@@ -29,7 +29,9 @@ CREATE TABLE IF NOT EXISTS departments (
   name TEXT NOT NULL UNIQUE,
   -- Unix Timestamp
   last_updated INTEGER NOT NULL,
-  camera_count INTEGER
+  camera_count INTEGER,
+  vehicles_30_days INTEGER,
+  searches_30_days INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS searches (
@@ -52,8 +54,8 @@ database.exec(initDatabase);
 
 
 const createDepartment = database.prepare(`
-    INSERT INTO departments (dept_slug, flock_status, name, last_updated, camera_count)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO departments (dept_slug, flock_status, name, last_updated, camera_count, vehicles_30_days, searches_30_days)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
     RETURNING dept_slug, flock_status, last_updated
 `);
 
@@ -150,6 +152,37 @@ function get_num_cameras(DOM) {
     return num
 }
 
+function get_num_vehicles_30_days(DOM) {
+    // console.log(1)
+    const labels = DOM.querySelectorAll(".label.col-12");
+    // console.log(labels)
+    let num = null
+    labels.forEach(label => {
+        if(label.innerText == "Vehicles detected in the last 30 days") {
+            num = label.parentNode.nextSibling.firstChild.innerText
+        }
+    });
+
+    return num
+}
+
+
+function get_num_searches_30_days(DOM) {
+    // console.log(1)
+    const labels = DOM.querySelectorAll(".label.col-12");
+    // console.log(labels)
+    let num = null
+    labels.forEach(label => {
+        // console.log(label.innerText)
+        if(label.innerText == "Searches in the last 30 days") {
+            num = label.parentNode.nextSibling.firstChild.innerText
+        }
+    });
+
+    return num
+}
+
+
 function get_audit(DOM) {
     // console.log(1)
     const labels = DOM.querySelectorAll(".label.col-12");
@@ -172,7 +205,7 @@ async function process_dept(name){
 
     if (cache_depts.some(e => e.dept_slug === slug)){
         // We have processed this dept before
-        console.log("processed already!!!!")
+        // console.log("processed already!!!!")
         return
     }
 
@@ -181,12 +214,16 @@ async function process_dept(name){
     const url = "https://transparency.flocksafety.com/" + slug
 
     let num_cams = null
+    let num_vehicles = null
+    let num_searches = null
 
     const response = await fetch(url);
     if(response.status == 200) {
         const text = await response.text();
         const DOM = parse(text)
         num_cams = get_num_cameras(DOM);
+        num_vehicles = get_num_vehicles_30_days(DOM);
+        num_searches = get_num_searches_30_days(DOM);
         console.log(`Found ${slug}, ${get_num_searches(DOM)} searches, ${num_cams} cameras, ${get_audit(DOM) != null ? "✅ audit" : "❌ audit"} ${url}`)
     } 
     // else {
@@ -194,7 +231,7 @@ async function process_dept(name){
     // }
 
     // console.log(slug, response.status, name, Date.now(), 0, cache_depts.some(e => e.dept_slug === slug))
-    const newDept = createDepartment.get(slug, response.status, name, Date.now(), num_cams)
+    const newDept = createDepartment.get(slug, response.status, name, Date.now(), num_cams, num_vehicles, num_searches)
     // console.log(newDept)
     cache_depts.push(newDept);
 }
