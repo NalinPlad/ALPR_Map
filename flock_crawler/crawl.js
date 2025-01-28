@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS searches (
 );
 `;
 
+// database.exec("DROP TABLE IF EXISTS searches")
 // database.exec("DROP TABLE IF EXISTS departments")
 database.exec(initDatabase);
 
@@ -67,13 +68,20 @@ const getSearchIds = database.prepare(`
     SELECT search_id FROM searches
 `);
 
+const createSearch = database.prepare(`
+    INSERT INTO searches (search_dept, search_id, user_id, time, camera_count, reason)
+    VALUES (?, ?, ?, ?, ?, ?)
+`);
+
 
 
 
 let cache_depts = getDepartments.all()
-let search_ids = getSearchIds.all()
+let search_ids = getSearchIds.all().map(i => i.search_id)
 
-// console.log(cache_depts[0].last_updated);
+
+
+// console.log(search_ids);
 
 // process.exit()
 
@@ -87,7 +95,8 @@ const DOM = parse(text);
 
 const depts = list_depts(DOM);
 // console.log(depts)
-// const depts = ['Anaheim CA PD',
+// const depts = [
+//   'Anaheim CA PD',
 //   'Anderson CA PD',
 //   'Antioch CA PD',
 //   'Arcadia CA PD',
@@ -98,12 +107,18 @@ const depts = list_depts(DOM);
 //   'Bakersfield CA PD',
 //   'Baldwin Park CA PD',
 //   'Beaumont CA PD',
-//   'Bell Gardens CA PD']
+//   'El Cerrito CA PD',
+//   'Bell Gardens CA PD'
+// ]
 
-const audit = get_audit(DOM);
-console.log(process_audit(audit));
+// const audit = get_audit(DOM);
+// const searches = process_audit(audit)
 
-process.exit();
+
+
+
+
+// process.exit()
 
 console.log(`Searching ${depts.length} depts...`)
 
@@ -206,7 +221,7 @@ function get_audit(DOM) {
 
 function process_audit(csv) {
     const records = []
-    const lines = decodeURIComponent(audit.replaceAll("data:text/plain;charset=utf-8,", "")).split("\n");
+    const lines = decodeURIComponent(csv.replaceAll("data:text/plain;charset=utf-8,", "")).split("\n");
     lines.shift();
     
     lines.forEach(line => {
@@ -227,6 +242,24 @@ function process_audit(csv) {
 
     return records 
 }
+
+function search_batch_insert(searches, dept_slug){
+    // database.exec("begin transaction");
+    
+    searches.forEach(search => {
+        // console.log("Inserting: ",search.reason, search_ids.includes(search.id))
+        if(search_ids.includes(search.id)){
+            // console.log("DONE", dept_slug)
+            return
+        } else {
+            createSearch.run(dept_slug, search.id, search.u_id, search.time, search.cam_count, search.reason)
+            search_ids.push(search.id)
+        }
+    });
+    
+    // database.exec("commit");
+}
+
 
 async function process_dept(name){
     // console.log(name)
@@ -257,15 +290,30 @@ async function process_dept(name){
         num_cams = get_num_cameras(DOM);
         num_vehicles = get_num_vehicles_30_days(DOM);
         num_searches = get_num_searches_30_days(DOM);
-        console.log(`Found ${slug}, ${get_num_searches(DOM)} searches, ${num_cams} cameras, ${get_audit(DOM) != null ? "✅ audit" : "❌ audit"} ${url}`)
+
+        const newDept = createDepartment.get(slug, response.status, name, Date.now(), null, null, null)
+        cache_depts.push(newDept);
+
+        const audit = get_audit(DOM);
+
+        if(audit != null) {
+            // console.log("AUDITING ", slug)
+            const searches = process_audit(audit);
+            // console.log(audit.slice(0,1000))
+            // console.log(searches[0])
+            search_batch_insert(searches, slug)
+        }
+
+        console.log(`Found ${slug}, ${get_num_searches(DOM)} searches, ${num_cams} cameras, ${audit != null ? "✅ audit" : "❌ audit"} ${url}`)
+
+        return
     } 
     // else {
     //     failed.push(slug)
     // }
 
     // console.log(slug, response.status, name, Date.now(), 0, cache_depts.some(e => e.dept_slug === slug))
-    const newDept = createDepartment.get(slug, response.status, name, Date.now(), num_cams, num_vehicles, num_searches)
-    // console.log(newDept)
+    const newDept = createDepartment.get(slug, response.status, name, Date.now(), null, null, null)
     cache_depts.push(newDept);
 }
 
