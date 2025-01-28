@@ -87,7 +87,7 @@ let search_ids = getSearchIds.all().map(i => i.search_id)
 
 
 
-const response = await fetch("https://transparency.flocksafety.com/el-cerrito-ca-pd");
+const response = await fetch("https://transparency.flocksafety.com/flock-safety-sales");
 const text = await response.text();
 
 const DOM = parse(text);
@@ -95,6 +95,10 @@ const DOM = parse(text);
 
 const depts = list_depts(DOM);
 // console.log(depts)
+// depts.forEach(d => {
+//     console.log(d)
+// })
+// process.exit()
 // const depts = [
 //   'Anaheim CA PD',
 //   'Anderson CA PD',
@@ -252,8 +256,13 @@ function search_batch_insert(searches, dept_slug){
             // console.log("DONE", dept_slug)
             return
         } else {
-            createSearch.run(dept_slug, search.id, search.u_id, search.time, search.cam_count, search.reason)
-            search_ids.push(search.id)
+            try {
+                createSearch.run(dept_slug, search.id, search.u_id, search.time, search.cam_count, search.reason)
+                search_ids.push(search.id)
+            } catch (error) {
+                console.log("! SQL failure inserting search; " + error,dept_slug,search.id,search.reason)
+                search_ids.push(search.id)
+            }
         }
     });
     
@@ -291,20 +300,27 @@ async function process_dept(name){
         num_vehicles = get_num_vehicles_30_days(DOM);
         num_searches = get_num_searches_30_days(DOM);
 
-        const newDept = createDepartment.get(slug, response.status, name, Date.now(), null, null, null)
+        const newDept = createDepartment.get(slug, response.status, name, Date.now(), num_cams, num_vehicles, num_searches)
         cache_depts.push(newDept);
-
+        
         const audit = get_audit(DOM);
-
+        console.log(newDept);
+        // console.log()
+        console.log(`Found ${newDept.dept_slug}, ${num_searches} searches, ${num_cams} cameras, ${audit != null ? "✅ audit" : "❌ audit"} ${url}`)
+        // console.log(database.)
         if(audit != null) {
             // console.log("AUDITING ", slug)
             const searches = process_audit(audit);
             // console.log(audit.slice(0,1000))
             // console.log(searches[0])
-            search_batch_insert(searches, slug)
+            search_batch_insert(searches, newDept.dept_slug)
         }
 
-        console.log(`Found ${slug}, ${get_num_searches(DOM)} searches, ${num_cams} cameras, ${audit != null ? "✅ audit" : "❌ audit"} ${url}`)
+
+        for (const dept of list_depts(DOM)) {
+            // console.log(dept)
+            await process_dept(dept);
+        }
 
         return
     } 
@@ -312,7 +328,7 @@ async function process_dept(name){
     //     failed.push(slug)
     // }
 
-    // console.log(slug, response.status, name, Date.now(), 0, cache_depts.some(e => e.dept_slug === slug))
+    console.log("Dead link", slug)
     const newDept = createDepartment.get(slug, response.status, name, Date.now(), null, null, null)
     cache_depts.push(newDept);
 }
