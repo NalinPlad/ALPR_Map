@@ -95,13 +95,19 @@ if (CITY_POSITION_WASH) {
     console.log("STARTING GEOCODING")
     
     // https://regexr.com/
-    const simple_name = RegExp(".* [A-Z]{2}[ -]?$")
+    const simple_name = RegExp(".* [A-Z]{2} [A-Z]{2}[ -]?$")
+    const state = RegExp(" [A-Z]{2}")
+    const pd = RegExp(" [A-Z]{2}[ -]?$")
     
     depts.forEach(dept => {
         if(simple_name.test(dept.name)){
-            
+            // Culpeper VA PD
+            let state_code = state.exec(dept.name)[0].replace(" ", "")
+            if(state_code == "PD"){
+                state_code = pd.exec(dept.name)
+            }
+
         }
-        // console.log(dept.name, simple_name.test(dept.name))
     });
     
     process.exit()
