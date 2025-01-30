@@ -62,11 +62,11 @@ const createDepartment = database.prepare(`
 `);
 
 const getDepartments = database.prepare(`
-    SELECT dept_slug, flock_status, last_updated, name FROM departments
+    SELECT dept_slug, flock_status, last_updated FROM departments
 `);
 
 const getActiveDepartments = database.prepare(`
-    
+    SELECT dept_slug, name FROM departments WHERE flock_status = 200
 `);
 
 const getSearchIds = database.prepare(`
@@ -84,25 +84,33 @@ const getCityFromName = database.prepare(`
 
 
 
-let cache_depts = getDepartments.all()
-let search_ids = getSearchIds.all().map(i => i.search_id)
 
 
 // Set this to TRUE to initiate a city location insertion procedure
 const CITY_POSITION_WASH = true;
 
 if (CITY_POSITION_WASH) {
+    let depts = getActiveDepartments.all();
+
     console.log("STARTING GEOCODING")
     
+    // https://regexr.com/
     const simple_name = RegExp(".* [A-Z]{2}[ -]?$")
-
-    cache_depts.forEach(dept => {
-        console.log(dept.name, simple_name.test(dept.name))
+    
+    depts.forEach(dept => {
+        if(simple_name.test(dept.name)){
+            
+        }
+        // console.log(dept.name, simple_name.test(dept.name))
     });
-
+    
     process.exit()
 }
 
+
+
+let cache_depts = getDepartments.all()
+let search_ids = getSearchIds.all().map(i => i.search_id)
 // console.log(search_ids);
 
 // process.exit()
