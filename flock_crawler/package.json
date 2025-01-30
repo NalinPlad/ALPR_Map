@@ -10,6 +10,7 @@
   "description": "",
   "type": "module",
   "dependencies": {
+    "csv": "^6.3.11",
     "sqlite3": "^5.1.7"
   }
 }

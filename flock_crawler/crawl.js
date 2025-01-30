@@ -1,5 +1,6 @@
 import { parse } from 'node-html-parser';
 import { DatabaseSync } from 'node:sqlite';
+import fs from 'node:fs'
 
 
 
@@ -73,6 +74,10 @@ const createSearch = database.prepare(`
     VALUES (?, ?, ?, ?, ?, ?)
 `);
 
+const getCityFromName = database.prepare(`
+    SELECT lat,lng,city_ascii FROM uscities WHERE city_ascii LIKE ? AND state_id == ? 
+`);
+
 
 
 
@@ -87,39 +92,13 @@ let search_ids = getSearchIds.all().map(i => i.search_id)
 
 
 
-const response = await fetch("https://transparency.flocksafety.com/flock-safety-sales");
+const response = await fetch("https://transparency.flocksafety.com/richmond-va-pd");
 const text = await response.text();
 
 const DOM = parse(text);
 
 
 const depts = list_depts(DOM);
-// console.log(depts)
-// depts.forEach(d => {
-//     console.log(d)
-// })
-// process.exit()
-// const depts = [
-//   'Anaheim CA PD',
-//   'Anderson CA PD',
-//   'Antioch CA PD',
-//   'Arcadia CA PD',
-//   'Atherton CA PD',
-//   'Atwater CA PD',
-//   'Auburn CA PD',
-//   'Azusa CA PD',
-//   'Bakersfield CA PD',
-//   'Baldwin Park CA PD',
-//   'Beaumont CA PD',
-//   'El Cerrito CA PD',
-//   'Bell Gardens CA PD'
-// ]
-
-// const audit = get_audit(DOM);
-// const searches = process_audit(audit)
-
-
-
 
 
 // process.exit()
@@ -147,6 +126,15 @@ function list_depts(DOM) {
 
     return depts
 }
+
+function load_all_csv_data() {
+
+    // This is just done by importing it directly into the sqlite database now
+    // https://til.simonwillison.net/sqlite/import-csv
+
+}
+
+// load_all_csv_data()
 
 function get_num_searches(DOM) {
     // console.log(1)
@@ -190,7 +178,6 @@ function get_num_vehicles_30_days(DOM) {
     return (num == null || isNaN(num.replaceAll(",", ""))) ? null : parseInt(num.replaceAll(",", ""))
 }
 
-
 function get_num_searches_30_days(DOM) {
     // console.log(1)
     const labels = DOM.querySelectorAll(".label.col-12");
@@ -213,7 +200,6 @@ function get_audit(DOM) {
     let csv = null
     labels.forEach(label => {
         if(label.innerText == "Public Search Audit") {
-            // console.log(label.parentNode.nextSibling.firstChild.firstChild._attrs)
             if(label.parentNode.nextSibling.firstChild.firstChild._attrs){
                 csv = label.parentNode.nextSibling.firstChild.firstChild._attrs.href;
             }
