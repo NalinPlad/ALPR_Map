@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS departments (
 
 CREATE TABLE IF NOT EXISTS searches (
   search_dept TEXT NOT NULL,
-  search_id TEXT PRIMARY KEY, 
+  search_id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
   time INTEGER NOT NULL,
   camera_count INTEGER,
@@ -62,7 +62,11 @@ const createDepartment = database.prepare(`
 `);
 
 const getDepartments = database.prepare(`
-    SELECT dept_slug, flock_status, last_updated FROM departments
+    SELECT dept_slug, flock_status, last_updated, name FROM departments
+`);
+
+const getActiveDepartments = database.prepare(`
+    
 `);
 
 const getSearchIds = database.prepare(`
@@ -75,9 +79,8 @@ const createSearch = database.prepare(`
 `);
 
 const getCityFromName = database.prepare(`
-    SELECT lat,lng,city_ascii FROM uscities WHERE city_ascii LIKE ? AND state_id == ? 
+    SELECT lat,lng,city_ascii FROM uscities WHERE city_ascii LIKE ? AND state_id = ? 
 `);
-
 
 
 
@@ -85,6 +88,20 @@ let cache_depts = getDepartments.all()
 let search_ids = getSearchIds.all().map(i => i.search_id)
 
 
+// Set this to TRUE to initiate a city location insertion procedure
+const CITY_POSITION_WASH = true;
+
+if (CITY_POSITION_WASH) {
+    console.log("STARTING GEOCODING")
+    
+    const simple_name = RegExp(".* [A-Z]{2}[ -]?$")
+
+    cache_depts.forEach(dept => {
+        console.log(dept.name, simple_name.test(dept.name))
+    });
+
+    process.exit()
+}
 
 // console.log(search_ids);
 
@@ -99,6 +116,7 @@ const DOM = parse(text);
 
 
 const depts = list_depts(DOM);
+
 
 
 // process.exit()
@@ -133,8 +151,6 @@ function load_all_csv_data() {
     // https://til.simonwillison.net/sqlite/import-csv
 
 }
-
-// load_all_csv_data()
 
 function get_num_searches(DOM) {
     // console.log(1)
