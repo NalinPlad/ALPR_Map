@@ -102,11 +102,15 @@ if (CITY_POSITION_WASH) {
     depts.forEach(dept => {
         if(simple_name.test(dept.name)){
             // Culpeper VA PD
-            let state_code = state.exec(dept.name)[0].replace(" ", "")
+            let state_code = state.exec(dept.name)[0].trim()
             if(state_code == "PD"){
-                state_code = pd.exec(dept.name)
+                state_code = pd.exec(dept.name)[0].trim()
             }
+            
+            // Fix This trim whitespace from ends
+            const city =dept.name.split(state)[0].trim()
 
+            console.log(city+", "+state_code)
         }
     });
     
