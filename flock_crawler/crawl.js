@@ -28,11 +28,17 @@ CREATE TABLE IF NOT EXISTS departments (
   dept_slug TEXT PRIMARY KEY,
   flock_status INTEGER NOT NULL,
   name TEXT NOT NULL UNIQUE,
+
   -- Unix Timestamp
   last_updated INTEGER NOT NULL,
   camera_count INTEGER,
   vehicles_30_days INTEGER,
   searches_30_days INTEGER
+
+  -- Determined keys
+  latitude INTEGER,
+  longitude INTEGER,
+  state_code TEXT
 );
 
 CREATE TABLE IF NOT EXISTS searches (
@@ -65,6 +71,10 @@ const getDepartments = database.prepare(`
     SELECT dept_slug, flock_status, last_updated FROM departments
 `);
 
+const updateDepartmentLocation = database.prepare(`
+    UPDATE departments SET latitude = ?, longitude = ?, state_code = ? WHERE dept_slug = ?    
+`);
+
 const getActiveDepartments = database.prepare(`
     SELECT dept_slug, name FROM departments WHERE flock_status = 200
 `);
@@ -79,8 +89,13 @@ const createSearch = database.prepare(`
 `);
 
 const getCityFromName = database.prepare(`
-    SELECT lat,lng,city_ascii FROM uscities WHERE city_ascii LIKE ? AND state_id = ? 
+    SELECT lat,lng,city_ascii FROM uscities WHERE city_ascii LIKE ? AND state_id = ?
 `);
+
+const getCountyFromName = database.prepare(`
+    SELECT lat,lng,county_full FROM uscounties WHERE county_full LIKE ? AND state_id = ?
+`);
+
 
 
 
@@ -101,16 +116,28 @@ if (CITY_POSITION_WASH) {
     
     depts.forEach(dept => {
         if(simple_name.test(dept.name)){
-            // Culpeper VA PD
             let state_code = state.exec(dept.name)[0].trim()
             if(state_code == "PD"){
                 state_code = pd.exec(dept.name)[0].trim()
             }
-            
-            // Fix This trim whitespace from ends
-            const city =dept.name.split(state)[0].trim()
 
-            console.log(city+", "+state_code)
+            let search;
+
+            let name = dept.name.split(state)[0].trim()
+
+            if (dept.name.includes("County")){
+                search = getCountyFromName.get(name, state_code)
+            } else {
+                search = getCityFromName.get(name, state_code);
+            }
+
+            if (search) {
+                // We automatically found a coordinate pair for this department
+                console.log(name+", "+state_code + " @ " + search.lat, search.lng)
+                updateDepartmentLocation.run(search.lat, search.lng, state_code, dept.dept_slug)
+            } else {
+                console.log(name+", "+state_code, "❌")
+            }
         }
     });
     
