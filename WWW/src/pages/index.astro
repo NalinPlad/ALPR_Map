@@ -49,9 +49,8 @@ import Layout from '../layouts/Layout.astro';
 		const db = new SQL.Database(new Uint8Array(buf));
 
 
-		const departments = db.exec("SELECT * FROM departments WHERE flock_status = 200 AND latitude IS NOT NULL AND longitude IS NOT NULL")[0].values;
 		// console.log(departments[0].values)
-
+		
 		var map = L.map('map').setView([37.7668, -122.267], 10);
 
 		L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.{ext}', {
@@ -62,9 +61,12 @@ import Layout from '../layouts/Layout.astro';
 		}).addTo(map);
 
 		// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code					
+		const departments = db.exec("SELECT * FROM departments WHERE flock_status = 200 AND latitude IS NOT NULL AND longitude IS NOT NULL")[0].values;
 		departments.forEach(dept => {
 			dept[10] = L.marker([dept[7],dept[8]]).addTo(map);
 		});
+
+		const first_time = new Date(db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0])
 
 
 		
