@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "astro": "^5.2.3",
+    "leaflet": "^1.9.4",
     "sql.js": "^1.12.0"
   }
 }

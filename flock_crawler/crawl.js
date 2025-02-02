@@ -102,7 +102,7 @@ const getCountyFromName = database.prepare(`
 
 
 // Set this to TRUE to initiate a city location insertion procedure
-const CITY_POSITION_WASH = true;
+const CITY_POSITION_WASH = false;
 
 if (CITY_POSITION_WASH) {
     let depts = getActiveDepartments.all();
@@ -154,7 +154,7 @@ let search_ids = getSearchIds.all().map(i => i.search_id)
 
 
 
-const response = await fetch("https://transparency.flocksafety.com/richmond-va-pd");
+const response = await fetch("https://transparency.flocksafety.com/");
 const text = await response.text();
 
 const DOM = parse(text);
