@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { parse } from 'node-html-parser';
 
-const database = new DatabaseSync('./audit_db');
+const database = new DatabaseSync('../WWW/public/audit_db');
 
 const getActiveDepartments = database.prepare(`
     SELECT dept_slug, name FROM departments WHERE flock_status = 200

@@ -21,7 +21,7 @@ import fs from 'node:fs'
 // ' Florida LE Flock Training',
 
 
-const database = new DatabaseSync('./audit_db');
+const database = new DatabaseSync('../WWW/public/audit_db');
 
 const initDatabase = `
 CREATE TABLE IF NOT EXISTS departments (
