@@ -5,7 +5,9 @@ import Layout from '../layouts/Layout.astro';
 <Layout>
 	<div class="container">
 		<div id="map"></div>
-		<div id="info"></div>
+		<div id="info" class="flex">
+
+		</div>
 	</div>
 
 	<style>
@@ -35,10 +37,16 @@ import Layout from '../layouts/Layout.astro';
 			background: rgb(34, 34, 34);
 		}
 
+		.search {
+			color: white;
+			background-color: red;
+		}
+
 	</style>
 
 	<script>
-		import  initSqlJs  from "sql.js"
+		import { sequence } from "astro:middleware";
+import  initSqlJs  from "sql.js"
 
 		const sqlPromise = await initSqlJs({
 			locateFile: file => `https://sql.js.org/dist/${file}`
@@ -66,8 +74,31 @@ import Layout from '../layouts/Layout.astro';
 			dept[10] = L.marker([dept[7],dept[8]]).addTo(map);
 		});
 
-		const first_time = new Date(db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0])
+		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
 
+		const searches = db.exec("SELECT * from searches ORDER BY time ASC")[0].values;
+
+		const infobox = document.querySelector("#info")
+
+		let c_time = first_time
+
+		// 0.search_dept	1.search_id	2.user_id	3.time	4.camera_count	5.reason
+		function draw_searches(time){
+			infobox.innerText = ""
+			searches.forEach(search => {
+				if(search[3] <= time) {
+					// console.log(search)
+					infobox.innerHTML += `<div class="search">${search[0]}\n<hr/>\n</div>`
+				}
+			})
+		}
+
+		draw_searches(c_time + 100000)
+
+		setInterval(_ => {
+			c_time += 1000
+			draw_searches(c_time)
+		}, 1000)
 
 		
 	</script>
