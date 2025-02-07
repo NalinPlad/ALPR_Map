@@ -9,7 +9,7 @@ import Layout from '../layouts/Layout.astro';
 			<div id="info" class="flex"></div>
 		</div>
 		<div class="controls">
-			<b>Time</b>
+			<b id="t_label">Time</b>
 			<input type="range" id="t_slider"/>
 		</div>
 	</div>
@@ -35,6 +35,8 @@ import Layout from '../layouts/Layout.astro';
 
 			display: flex;
 			flex-direction: row;
+
+			overflow-y: scroll;
 
 			color: #fff;
 		}
@@ -83,6 +85,7 @@ import Layout from '../layouts/Layout.astro';
 
 	<script>
 		import { sequence } from "astro:middleware";
+import { slide } from "astro:transitions";
 		import  initSqlJs  from "sql.js"
 
 		const sqlPromise = await initSqlJs({
@@ -112,29 +115,51 @@ import Layout from '../layouts/Layout.astro';
 		});
 
 		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
+		const last_time = db.exec("SELECT time FROM searches ORDER BY time DESC LIMIT 1")[0].values[0][0]
 
 		const searches = db.exec("SELECT * from searches ORDER BY time ASC")[0].values;
 
 		const infobox = document.querySelector("#info")
+		const slider = document.querySelector("#t_slider")
+		const label = document.querySelector("#t_label")
+
+		slider.min = first_time
+		slider.max = last_time
+		slider.step = 1
+		
+
+		slider.value = first_time
+		label.innerText = Date(first_time)
 
 		let c_time = first_time
 
 		// 0.search_dept	1.search_id	2.user_id	3.time	4.camera_count	5.reason
 		function draw_searches(time){
 			infobox.innerText = ""
+			console.log(time)
+			const d = new Date(time)
+			label.innerText = d.toLocaleString("en-US");
 			searches.forEach(search => {
-				if(search[3] <= time) {
+				if(search[3] <= time && search[3] >= time - 15*24*60*60) {
 					// console.log(search)
-					infobox.innerHTML += `<div class="search">${search[0]}\n<hr/>\n</div>`
+					infobox.innerHTML += `<div class="search">${search[0]}<br/>${search[5]}\n<hr/>\n</div>`
 				}
 			})
 		}
 
-		draw_searches(c_time + 100000)
+		slider.addEventListener("change", _ => {
+			c_time = parseInt(slider.value)
+			// console.log(c_time)
+			draw_searches(c_time)
+		})
+
+		draw_searches(c_time)
 
 		setInterval(_ => {
 			c_time += 1000
 			draw_searches(c_time)
+
+			// console.log(c_time)
 		}, 1000)
 
 		// new method: for each set timeout to do next one based on log of difference between times of this and next search
