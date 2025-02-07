@@ -10,7 +10,7 @@ import Layout from '../layouts/Layout.astro';
 		</div>
 		<div class="controls">
 			<b>Time</b>
-			<input type="range"/>
+			<input type="range" id="t_slider"/>
 		</div>
 	</div>
 
@@ -23,6 +23,10 @@ import Layout from '../layouts/Layout.astro';
 
 			display: flex;
 			flex-direction: column
+		}
+
+		#t_slider {
+			width: 75%;
 		}
 
 		.display {
@@ -40,7 +44,9 @@ import Layout from '../layouts/Layout.astro';
 			height: 15%;
 		
 			background-color: rgb(34, 34, 34);
-			border-top: 5px rgb(25, 25, 25) solid;
+			border-top: 5px rgb(255, 255, 255) solid;
+
+			/* padding: ; */
 
 			display: flex;
 			flex-direction: column;
@@ -59,7 +65,7 @@ import Layout from '../layouts/Layout.astro';
 
 		#info {
 			background-color: rgb(34, 34, 34);
-			border-left: 5px rgb(25, 25, 25) solid;
+			border-left: 5px rgb(255, 255, 255) solid;
 			width: 25%;
 			height: 100%;
 		}
@@ -132,7 +138,6 @@ import Layout from '../layouts/Layout.astro';
 		}, 1000)
 
 		// new method: for each set timeout to do next one based on log of difference between times of this and next search
-
 		
 	</script>
 </Layout>
