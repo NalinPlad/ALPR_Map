@@ -35,8 +35,9 @@ import Layout from '../layouts/Layout.astro';
 
 			display: flex;
 			flex-direction: row;
+			/* padding: 5px; */
 
-			overflow-y: scroll;
+			/* overflow-y: scroll; */
 
 			color: #fff;
 		}
@@ -70,6 +71,10 @@ import Layout from '../layouts/Layout.astro';
 			border-left: 5px rgb(255, 255, 255) solid;
 			width: 25%;
 			height: 100%;
+
+			padding: 5px;
+
+			overflow-y: scroll;
 		}
 
 		.leaflet-container {
@@ -108,10 +113,11 @@ import { slide } from "astro:transitions";
 			ext: 'png'
 		}).addTo(map);
 
-		// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code					
+		// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code	10.leaflet object	11.playing
 		const departments = db.exec("SELECT * FROM departments WHERE flock_status = 200 AND latitude IS NOT NULL AND longitude IS NOT NULL")[0].values;
 		departments.forEach(dept => {
-			dept[10] = L.marker([dept[7],dept[8]]).addTo(map);
+			dept[10] = L.marker([dept[7],dept[8]]).setOpacity(0.01).addTo(map);
+			dept[11] = false
 		});
 
 		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
@@ -135,19 +141,30 @@ import { slide } from "astro:transitions";
 
 		// 0.search_dept	1.search_id	2.user_id	3.time	4.camera_count	5.reason
 		function draw_searches(time){
-			infobox.innerText = ""
+			infobox.innerHTML = ""
 			console.log(time)
 			const d = new Date(time)
 			label.innerText = d.toLocaleString("en-US");
 			searches.forEach(search => {
-				if(search[3] <= time && search[3] >= time - 15*24*60*60) {
+				if(search[3] <= time && search[3] >= time - 1*60*60*1000) {
+					const dp = departments.filter(d => d[0] == search[0])[0]
+					if(Math.abs(search[3] - time) < 10000 && dp[11] == false){
+						dp[10].setOpacity(1)
+						dp[11] = true
+						setTimeout(_ => {
+							dp[10].setOpacity(0.01)
+							dp[11] = false
+						}, 500)
+					}
 					// console.log(search)
-					infobox.innerHTML += `<div class="search">${search[0]}<br/>${search[5]}\n<hr/>\n</div>`
+					infobox.innerHTML = `<div class="search">${dp[2]}<br/>${search[5]}\n<hr/>\n</div>` + infobox.innerHTML
+				} else {
+					// dp[10].setOpacity(0)
 				}
 			})
 		}
 
-		slider.addEventListener("change", _ => {
+		slider.addEventListener("input", _ => {
 			c_time = parseInt(slider.value)
 			// console.log(c_time)
 			draw_searches(c_time)
@@ -160,7 +177,7 @@ import { slide } from "astro:transitions";
 			draw_searches(c_time)
 
 			// console.log(c_time)
-		}, 1000)
+		}, 100)
 
 		// new method: for each set timeout to do next one based on log of difference between times of this and next search
 		
