@@ -1,7 +1,7 @@
 **/**.DS_Store
 .vscode
-audit_db
-audit_db-journal
+# audit_db
+# audit_db-journal
 
 # Logs
 logs
