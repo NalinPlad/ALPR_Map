@@ -97,10 +97,6 @@ const getCountyFromName = database.prepare(`
 `);
 
 
-
-
-
-
 // Set this to TRUE to initiate a city location insertion procedure
 const CITY_POSITION_WASH = false;
 
@@ -190,12 +186,12 @@ function list_depts(DOM) {
     return depts
 }
 
-function load_all_csv_data() {
+// function load_all_csv_data() {
 
     // This is just done by importing it directly into the sqlite database now
     // https://til.simonwillison.net/sqlite/import-csv
 
-}
+// }
 
 function get_num_searches(DOM) {
     // console.log(1)
