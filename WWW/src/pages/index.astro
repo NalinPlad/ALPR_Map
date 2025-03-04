@@ -116,7 +116,7 @@ import Layout from '../layouts/Layout.astro';
 		// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code	10.leaflet object	11.playing
 		const departments = db.exec("SELECT * FROM departments WHERE flock_status = 200 AND latitude IS NOT NULL AND longitude IS NOT NULL")[0].values;
 		departments.forEach(dept => {
-			dept[10] = L.marker([dept[7],dept[8]]).setOpacity(0.01).addTo(map);
+			dept[10] = L.marker([dept[7],dept[8]]).addTo(map);
 			dept[11] = false
 		});
 
@@ -149,10 +149,10 @@ import Layout from '../layouts/Layout.astro';
 				if(search[3] <= time && search[3] >= time - 1*60*60*1000) {
 					const dp = departments.filter(d => d[0] == search[0])[0]
 					if(Math.abs(search[3] - time) < 10000 && dp[11] == false){
-						dp[10].setOpacity(1)
+						// dp[10].setOpacity(1)
 						dp[11] = true
 						setTimeout(_ => {
-							dp[10].setOpacity(0.01)
+							// dp[10].setOpacity(0.01)
 							dp[11] = false
 						}, 500)
 					}
@@ -173,9 +173,9 @@ import Layout from '../layouts/Layout.astro';
 		draw_searches(c_time)
 
 		setInterval(_ => {
-			c_time += 1000
+			c_time += 3000
 			draw_searches(c_time)
-		}, 100)
+		}, 50)
 
 		// new method: for each set timeout to do next one based on log of difference between times of this and next search
 		
