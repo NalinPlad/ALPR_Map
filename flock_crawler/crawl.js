@@ -51,6 +51,16 @@ CREATE TABLE IF NOT EXISTS searches (
 
   FOREIGN KEY (search_dept) REFERENCES departments (dept_slug)
 );
+
+CREATE TABLE IF NOT EXISTS connections (
+    connection_id TEXT PRIMARY KEY,
+    dept_a TEXT NOT NULL,
+    dept_b TEXT NOT NULL,
+
+   FOREIGN KEY (dept_a) REFERENCES departments (name),
+   FOREIGN KEY (dept_b) REFERENCES departments (name) 
+)
+
 `;
 
 // database.exec("DROP TABLE IF EXISTS searches")
@@ -58,7 +68,7 @@ CREATE TABLE IF NOT EXISTS searches (
 database.exec(initDatabase);
 
 
-
+process.exit();
 
 
 const createDepartment = database.prepare(`
