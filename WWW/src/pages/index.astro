@@ -106,6 +106,8 @@ import Layout from '../layouts/Layout.astro';
 		
 		var map = L.map('map').setView([37.7668, -122.267], 10);
 
+		var dept_pins = []
+
 		L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.{ext}', {
 			minZoom: 4,
 			maxZoom: 20,
@@ -113,12 +115,75 @@ import Layout from '../layouts/Layout.astro';
 			ext: 'png'
 		}).addTo(map);
 
-		// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code	10.leaflet object	11.playing
+		// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code	10.leaflet object	11.playing	12.line group
 		const departments = db.exec("SELECT * FROM departments WHERE flock_status = 200 AND latitude IS NOT NULL AND longitude IS NOT NULL")[0].values;
+
+		//
+		// const connections = db.exec("SELECT * FROM connections")
+
+		var conn_layer = L.layerGroup();
+
 		departments.forEach(dept => {
-			dept[10] = L.marker([dept[7],dept[8]]).addTo(map);
+			dept[10] = L.marker([dept[7],dept[8]])
+			dept[10].bindPopup(`
+				<h3>${dept[2]}</h3>
+				${dept[4] ? `<p><b>${dept[4].toLocaleString()}</b> cameras</p>` : ""}
+				${dept[5] ? `<p><b>${dept[5].toLocaleString()}</b> vehicles past 30 days</p>` : ""}
+				${dept[6] ? `<p><b>${dept[6].toLocaleString()}</b> searches past 30 days</p>` : ""}
+			`);
+
+			// dept[12] = L.l
+
 			dept[11] = false
+
+
+			dept_pins.push(dept[10])
+
+			// dept[10].on('click', _ => {
+            let connections = db.exec("SELECT * FROM connections WHERE dept_a = \"" + dept[2] + "\" AND dept_b IS NOT NULL")[0]
+
+            if(connections != undefined) {
+                
+                
+                connections = connections.values
+                
+                
+                const p1 = [dept[7],dept[8]]
+                
+                connections.forEach(connection => {
+                    // console.log(connection)
+                    let p2 = db.exec(`SELECT latitude, longitude FROM departments WHERE name = "${connection[2]}" AND latitude IS NOT NULL`)[0]
+                    if(p2 != undefined){
+
+                        p2 = p2.values[0]
+                        conn_layer.addLayer(L.polyline([p1,p2],{
+                            color: "white",
+                            opacity: 0.1,
+                            weight: 1
+                        }))
+                    }
+
+                });
+            }
+				// console.log(connections)
+			// })
+
+			
+			
+
 		});
+
+		var dept_layer = L.layerGroup(dept_pins);
+
+
+		var overlayMaps = {
+			"Departments": dept_layer,
+			"Connections": conn_layer
+		};
+
+		var layerControl = L.control.layers(null, overlayMaps).addTo(map);
+
+		departments[0][10].openPopup();
 
 		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
 		const last_time = db.exec("SELECT time FROM searches ORDER BY time DESC LIMIT 1")[0].values[0][0]
@@ -172,10 +237,10 @@ import Layout from '../layouts/Layout.astro';
 
 		draw_searches(c_time)
 
-		setInterval(_ => {
-			c_time += 3000
-			draw_searches(c_time)
-		}, 50)
+		// setInterval(_ => {
+		// 	c_time += 3000
+		// 	draw_searches(c_time)
+		// }, 200)
 
 		// new method: for each set timeout to do next one based on log of difference between times of this and next search
 		
