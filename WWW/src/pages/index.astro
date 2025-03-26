@@ -104,9 +104,11 @@ import Layout from '../layouts/Layout.astro';
 
 		// console.log(departments[0].values)
 		
-		var map = L.map('map').setView([37.7668, -122.267], 10);
+		var map = L.map('map').setView([37.7668, -122.267], 1);
 
 		var dept_pins = []
+
+        let d_hist = []
 
 		L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.{ext}', {
 			minZoom: 4,
@@ -149,18 +151,34 @@ import Layout from '../layouts/Layout.astro';
                 
                 
                 const p1 = [dept[7],dept[8]]
+                console.log(1)
                 
                 connections.forEach(connection => {
                     // console.log(connection)
                     let p2 = db.exec(`SELECT latitude, longitude FROM departments WHERE name = "${connection[2]}" AND latitude IS NOT NULL`)[0]
                     if(p2 != undefined){
-
                         p2 = p2.values[0]
-                        conn_layer.addLayer(L.polyline([p1,p2],{
-                            color: "white",
-                            opacity: 0.1,
-                            weight: 1
-                        }))
+
+                        // if(db.exec(`SELECT * FROM connections WHERE dept_a = "${connection[2]}" AND dept_b = "${dept[2]}"`)[0]){
+                        // //     conn_layer.addLayer(L.polyline([p1,p2],{
+                        // //         color: "red",
+                        // //         opacity: 0.1,
+                        // //         weight: 1
+                        // //     }))
+
+                        // // } else {
+                        // }
+
+                        const d = Math.sqrt( ((p2[1]-p1[1])**2) + ((p2[0]-p1[0])**2) ) 
+                        d_hist.push(d)
+                        console.log(d)
+                        if(d > 10){
+                            conn_layer.addLayer(L.polyline([p1,p2],{
+                                color: "white",
+                                opacity: 0.1,
+                                weight: d/2
+                            }))
+                        }
                     }
 
                 });
@@ -184,6 +202,8 @@ import Layout from '../layouts/Layout.astro';
 		var layerControl = L.control.layers(null, overlayMaps).addTo(map);
 
 		departments[0][10].openPopup();
+
+        console.log(d_hist)
 
 		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
 		const last_time = db.exec("SELECT time FROM searches ORDER BY time DESC LIMIT 1")[0].values[0][0]
