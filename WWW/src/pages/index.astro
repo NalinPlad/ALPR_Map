@@ -102,7 +102,6 @@ import Layout from '../layouts/Layout.astro';
 		const db = new SQL.Database(new Uint8Array(buf));
 
 
-		// console.log(departments[0].values)
 		
 		var map = L.map('map').setView([37.7668, -122.267], 1);
 
@@ -124,6 +123,7 @@ import Layout from '../layouts/Layout.astro';
 		// const connections = db.exec("SELECT * FROM connections")
 
 		var conn_layer = L.layerGroup();
+		var dot_layer = L.layerGroup();
 
 		departments.forEach(dept => {
 			dept[10] = L.marker([dept[7],dept[8]])
@@ -151,10 +151,8 @@ import Layout from '../layouts/Layout.astro';
                 
                 
                 const p1 = [dept[7],dept[8]]
-                console.log(1)
                 
                 connections.forEach(connection => {
-                    // console.log(connection)
                     let p2 = db.exec(`SELECT latitude, longitude FROM departments WHERE name = "${connection[2]}" AND latitude IS NOT NULL`)[0]
                     if(p2 != undefined){
                         p2 = p2.values[0]
@@ -169,21 +167,33 @@ import Layout from '../layouts/Layout.astro';
                         // // } else {
                         // }
 
-                        const d = Math.sqrt( ((p2[1]-p1[1])**2) + ((p2[0]-p1[0])**2) ) 
-                        d_hist.push(d)
-                        console.log(d)
-                        if(d > 10){
-                            conn_layer.addLayer(L.polyline([p1,p2],{
-                                color: "white",
-                                opacity: 0.1,
-                                weight: d/2
-                            }))
-                        }
+                        // const d = Math.sqrt( ((p2[1]-p1[1])**2) + ((p2[0]-p1[0])**2) ) 
+                        // d_hist.push(d)
+                        // if(d > 10){
+						conn_layer.addLayer(L.polyline([p1,p2],{
+							color: "white",
+							opacity: 0.1,
+							weight: 1
+						}))
+
+						dot_layer.addLayer(L.circle([p1[0]+Math.random()*0.01, p1[1] +Math.random()*0.01], {
+							color: 'transparent',
+							fillColor: 'green',
+							fillOpacity: 0.5,
+							radius: 100
+						}))
+
+						dot_layer.addLayer(L.circle([p2[0]+Math.random()*0.01, p2[1] +Math.random()*0.01], {
+							color: 'transparent',
+							fillColor: 'red',
+							fillOpacity: 0.5,
+							radius: 100
+						}))
+                        // }
                     }
 
                 });
             }
-				// console.log(connections)
 			// })
 
 			
@@ -196,14 +206,14 @@ import Layout from '../layouts/Layout.astro';
 
 		var overlayMaps = {
 			"Departments": dept_layer,
-			"Connections": conn_layer
+			"Connections": conn_layer,
+			"Dots (R=Recv)": dot_layer
 		};
 
 		var layerControl = L.control.layers(null, overlayMaps).addTo(map);
 
 		departments[0][10].openPopup();
 
-        console.log(d_hist)
 
 		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
 		const last_time = db.exec("SELECT time FROM searches ORDER BY time DESC LIMIT 1")[0].values[0][0]
@@ -227,7 +237,6 @@ import Layout from '../layouts/Layout.astro';
 		// 0.search_dept	1.search_id	2.user_id	3.time	4.camera_count	5.reason
 		function draw_searches(time){
 			infobox.innerHTML = ""
-			console.log(time)
 			const d = new Date(time)
 			label.innerText = d.toLocaleString("en-US");
 			searches.forEach(search => {
@@ -241,7 +250,6 @@ import Layout from '../layouts/Layout.astro';
 							dp[11] = false
 						}, 500)
 					}
-					// console.log(search)
 					infobox.innerHTML = `<div class="search">${dp[2]}<br/>${search[5]}\n<hr/>\n</div>` + infobox.innerHTML
 				} else {
 					// dp[10].setOpacity(0)
@@ -251,7 +259,6 @@ import Layout from '../layouts/Layout.astro';
 
 		slider.addEventListener("input", _ => {
 			c_time = parseInt(slider.value)
-			// console.log(c_time)
 			draw_searches(c_time)
 		})
 
