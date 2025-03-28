@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+@theme {
+    --color-backdrop: rgb(34, 34, 34);
+    --color-backdark: rgb(24, 24, 24);
+  }

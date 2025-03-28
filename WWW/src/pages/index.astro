@@ -1,92 +1,36 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import "../styles/global.css";
 ---
 
 <Layout>
-	<div class="container">
-		<div class="display">
-			<div id="map"></div>
-			<div id="info" class="flex"></div>
+	<div class="h-screen w-screen max-w-full max-h-full flex flex-col">
+		<div class="flex h-5/6 w-full">
+			<div id="map" class="w-3/4 h-full"></div>
+			<div class="bg-backdrop border-l-2 border-white w-1/4 h-full p-2 overflow-y-scroll text-white">
+				<div>
+					<h1 class="text-xl font-mono"><b>flock.ajith.fyi</b> ~~~</h1>
+					<i>Analyzing public audit data from Flock transparency portals</i>
+					
+					<div class="w-full h-2 bg-slate-400 mt-3"></div>
+					<br/>
+				</div>
+
+				<div>
+					<div class="flex flex-col items-center mb-5">
+						<b id="t_label" class="font-mono mb-2">~~~</b>
+						<input type="button" id="pausebutton" class="mb-2 bg-backdark p-2 rounded-lg text-amber-300 font-bold cursor-pointer"/>
+						<input type="range" id="t_slider" class="w-3/4" />
+					</div>
+				</div>
+
+				<div id="info"></div>
+			</div>
 		</div>
-		<div class="controls">
-			<b id="t_label">Time</b>
-			<input type="range" id="t_slider"/>
+		<div class="w-full h-1/6 bg-backdrop border-t-2 border-white flex flex-col items-center justify-center text-white">
+
 		</div>
 	</div>
-
-	<style>
-		.container {
-			height: 100vh;
-			width: 100vw;
-			max-width: 100%;
-			max-height: 100%;
-
-			display: flex;
-			flex-direction: column
-		}
-
-		#t_slider {
-			width: 75%;
-		}
-
-		.display {
-			height: 85%;
-			width: 100%;
-
-			display: flex;
-			flex-direction: row;
-			/* padding: 5px; */
-
-			/* overflow-y: scroll; */
-
-			color: #fff;
-		}
-
-		.controls {
-			width: 100%;
-			height: 15%;
-		
-			background-color: rgb(34, 34, 34);
-			border-top: 5px rgb(255, 255, 255) solid;
-
-			/* padding: ; */
-
-			display: flex;
-			flex-direction: column;
-
-			align-items: center;
-			justify-content: center;
-
-			color: white;
-
-		}
-
-		#map {
-			width: 75%;
-			height: 100%;
-		}
-
-		#info {
-			background-color: rgb(34, 34, 34);
-			border-left: 5px rgb(255, 255, 255) solid;
-			width: 25%;
-			height: 100%;
-
-			padding: 5px;
-
-			overflow-y: scroll;
-		}
-
-		.leaflet-container {
-			background: rgb(34, 34, 34);
-		}
-
-		.search {
-			color: white;
-			background-color: red;
-		}
-
-	</style>
 
 	<script>
 		import { sequence } from "astro:middleware";
@@ -106,7 +50,6 @@ import Layout from '../layouts/Layout.astro';
 		var map = L.map('map').setView([37.7668, -122.267], 1);
 
 		var dept_pins = []
-
         let d_hist = []
 
 		L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.{ext}', {
@@ -119,14 +62,36 @@ import Layout from '../layouts/Layout.astro';
 		// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code	10.leaflet object	11.playing	12.line group
 		const departments = db.exec("SELECT * FROM departments WHERE flock_status = 200 AND latitude IS NOT NULL AND longitude IS NOT NULL")[0].values;
 
-		//
-		// const connections = db.exec("SELECT * FROM connections")
 
 		var conn_layer = L.layerGroup();
 		var dot_layer = L.layerGroup();
 
+		function hoverDept(dept){
+			dept.setStyle({
+				 radius: 7,
+				 dashArray: '5',
+				 fillOpacity: 1,
+				 weight: 2,
+				 color: 'white'
+			})
+		}
+
+		function leaveDept(dept){
+			dept.setStyle({
+				 radius: 5,
+				 fillOpacity: 0.8,
+				 color: 'transparent',
+				 fillColor: '#5987bd',
+				 dashArray: '',
+				 weight: 0,
+			})
+		}
+
 		departments.forEach(dept => {
-			dept[10] = L.marker([dept[7],dept[8]])
+			// dept[10] = L.marker([dept[7],dept[8]])
+			dept[10] = L.circleMarker([dept[7], dept[8]])
+			leaveDept(dept[10])
+
 			dept[10].bindPopup(`
 				<h3>${dept[2]}</h3>
 				${dept[4] ? `<p><b>${dept[4].toLocaleString()}</b> cameras</p>` : ""}
@@ -134,14 +99,14 @@ import Layout from '../layouts/Layout.astro';
 				${dept[6] ? `<p><b>${dept[6].toLocaleString()}</b> searches past 30 days</p>` : ""}
 			`);
 
-			// dept[12] = L.l
+			dept[10].on('mouseover', _ => {hoverDept(dept[10])});
+			dept[10].on('mouseout', _ => {leaveDept(dept[10])});
 
 			dept[11] = false
 
 
 			dept_pins.push(dept[10])
 
-			// dept[10].on('click', _ => {
             let connections = db.exec("SELECT * FROM connections WHERE dept_a = \"" + dept[2] + "\" AND dept_b IS NOT NULL")[0]
 
             if(connections != undefined) {
@@ -157,25 +122,14 @@ import Layout from '../layouts/Layout.astro';
                     if(p2 != undefined){
                         p2 = p2.values[0]
 
-                        // if(db.exec(`SELECT * FROM connections WHERE dept_a = "${connection[2]}" AND dept_b = "${dept[2]}"`)[0]){
-                        // //     conn_layer.addLayer(L.polyline([p1,p2],{
-                        // //         color: "red",
-                        // //         opacity: 0.1,
-                        // //         weight: 1
-                        // //     }))
-
-                        // // } else {
-                        // }
-
-                        // const d = Math.sqrt( ((p2[1]-p1[1])**2) + ((p2[0]-p1[0])**2) ) 
-                        // d_hist.push(d)
-                        // if(d > 10){
+						// Adding connection line
 						conn_layer.addLayer(L.polyline([p1,p2],{
 							color: "white",
 							opacity: 0.1,
 							weight: 1
-						}))
+						}).bringToBack())
 
+						// Adding start dot
 						dot_layer.addLayer(L.circle([p1[0]+Math.random()*0.01, p1[1] +Math.random()*0.01], {
 							color: 'transparent',
 							fillColor: 'green',
@@ -183,22 +137,18 @@ import Layout from '../layouts/Layout.astro';
 							radius: 100
 						}))
 
+						// Adding end dot
 						dot_layer.addLayer(L.circle([p2[0]+Math.random()*0.01, p2[1] +Math.random()*0.01], {
 							color: 'transparent',
 							fillColor: 'red',
 							fillOpacity: 0.5,
 							radius: 100
 						}))
-                        // }
                     }
 
                 });
             }
-			// })
-
-			
-			
-
+	
 		});
 
 		var dept_layer = L.layerGroup(dept_pins);
@@ -209,11 +159,12 @@ import Layout from '../layouts/Layout.astro';
 			"Connections": conn_layer,
 			"Dots (R=Recv)": dot_layer
 		};
+		
+		// dept_layer.bringToFront()
+
+		map.addLayer(dept_layer);
 
 		var layerControl = L.control.layers(null, overlayMaps).addTo(map);
-
-		departments[0][10].openPopup();
-
 
 		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
 		const last_time = db.exec("SELECT time FROM searches ORDER BY time DESC LIMIT 1")[0].values[0][0]
@@ -237,23 +188,39 @@ import Layout from '../layouts/Layout.astro';
 		// 0.search_dept	1.search_id	2.user_id	3.time	4.camera_count	5.reason
 		function draw_searches(time){
 			infobox.innerHTML = ""
+
 			const d = new Date(time)
-			label.innerText = d.toLocaleString("en-US");
-			searches.forEach(search => {
-				if(search[3] <= time && search[3] >= time - 1*60*60*1000) {
-					const dp = departments.filter(d => d[0] == search[0])[0]
-					if(Math.abs(search[3] - time) < 10000 && dp[11] == false){
-						// dp[10].setOpacity(1)
-						dp[11] = true
-						setTimeout(_ => {
-							// dp[10].setOpacity(0.01)
-							dp[11] = false
-						}, 500)
+			const hours = d.getHours() % 12 || 12;
+			const minutes = d.getMinutes().toString().padStart(2, '0');
+			const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
+			const month = d.toLocaleString('en-US', { month: 'short' });
+			const date = d.getDate();
+			const suffix = (date % 10 === 1 && date !== 11) ? 'st' : (date % 10 === 2 && date !== 12) ? 'nd' : (date % 10 === 3 && date !== 13) ? 'rd' : 'th';
+			const year = d.getFullYear();
+			label.innerText = `${month} ${date}${suffix} ${year}, ${hours}:${minutes} ${ampm}`;
+
+			searches.filter((search) => (search[3] <= time + 1000*60*60*1 && search[3] >= time - 1000*60*60*1)).forEach(search => {
+				// if(search[3] <= time && search[3] >= time - 1*60*60*1000) {
+					var dp = departments.filter(d => d[0] == search[0])[0]
+
+					// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code	10.leaflet object	11.playing	12.line group
+					if(!dp) {
+						dp = Array(13).fill("?")
 					}
-					infobox.innerHTML = `<div class="search">${dp[2]}<br/>${search[5]}\n<hr/>\n</div>` + infobox.innerHTML
-				} else {
-					// dp[10].setOpacity(0)
-				}
+
+					const search_time = new Date(search[3]);
+					const search_time_string = search_time.toLocaleString('en-US', {
+						year: '2-digit',
+						month: 'numeric',
+						day: 'numeric',
+						hour: 'numeric',
+						minute: '2-digit',
+						second: '2-digit',
+						hour12: true
+					});
+					console.log(dp)
+					infobox.innerHTML = `<div class="bg-backdark rounded-lg mb-3 p-2"><h1 class="text-sm text-slate-400">${dp[2]} • ${search_time_string}</h1><p class="text-lg align-middle"><i class="align-middle">“${search[5]}”</i><span class="ms-2 text-sm align-middle text-slate-300">${search[4].toLocaleString()} cameras searched</span></p>\n</div>` + infobox.innerHTML
+				// }
 			})
 		}
 
@@ -264,10 +231,31 @@ import Layout from '../layouts/Layout.astro';
 
 		draw_searches(c_time)
 
-		// setInterval(_ => {
-		// 	c_time += 3000
-		// 	draw_searches(c_time)
-		// }, 200)
+		var running = true;
+
+		var int = setInterval(_ => {
+			c_time += 1000 * 60;
+			draw_searches(c_time);
+		}, 200);
+
+		const pauseButton = document.querySelector("#pausebutton");
+		pauseButton.value = "Stop  ⏸️";
+
+		pauseButton.addEventListener("click", () => {
+			if (running) {
+				clearInterval(int);
+				pauseButton.value = "Play  ▶️";
+			} else {
+				int = setInterval(_ => {
+					c_time += 1000 * 60;
+					draw_searches(c_time);
+				}, 200);
+				pauseButton.value = "Stop  ⏸️";
+			}
+			running = !running;
+		});
+
+
 
 		// new method: for each set timeout to do next one based on log of difference between times of this and next search
 		
