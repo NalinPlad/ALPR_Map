@@ -12,6 +12,7 @@
     "@tailwindcss/vite": "^4.0.17",
     "astro": "^5.2.3",
     "leaflet": "^1.9.4",
+    "leaflet.tilelayer.colorfilter": "^1.2.5",
     "sql.js": "^1.13.0",
     "tailwindcss": "^4.0.17"
   }

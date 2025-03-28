@@ -6,7 +6,7 @@ import "../styles/global.css";
 <Layout>
 	<div class="h-screen w-screen max-w-full max-h-full flex flex-col">
 		<div class="flex h-5/6 w-full">
-			<div id="map" class="w-3/4 h-full"></div>
+			<div id="map" class="w-3/4 h-full flex items-center justify-center text-5xl text-white font-mono">Loading Data...</div>
 			<div class="bg-backdrop border-l-2 border-white w-1/4 h-full p-2 overflow-y-scroll text-white">
 				<div>
 					<h1 class="text-xl font-mono"><b>flock.ajith.fyi</b> ~~~</h1>
@@ -28,10 +28,11 @@ import "../styles/global.css";
 			</div>
 		</div>
 		<div class="w-full h-1/6 bg-backdrop border-t-2 border-white flex flex-col items-center justify-center text-white">
-
+			
 		</div>
 	</div>
 
+	<script src="./colorfilter.js"/>
 	<script>
 		import { sequence } from "astro:middleware";
 		import { slide } from "astro:transitions";
@@ -47,16 +48,21 @@ import "../styles/global.css";
 
 
 		
-		var map = L.map('map').setView([37.7668, -122.267], 1);
+		var map = L.map('map').setView([39.6089, -100.0181], 1);
 
 		var dept_pins = []
         let d_hist = []
 
-		L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.{ext}', {
+		let mapfilter = [
+			'grayscale:100%',
+			'invert:100%',
+		];
+
+		L.tileLayer.colorFilter('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			minZoom: 4,
 			maxZoom: 20,
-			attribution: '&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-			ext: 'png'
+			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+			filter: mapfilter
 		}).addTo(map);
 
 		// 0.dept_slug	1.flock_status	2.name	3.last_updated	4.camera_count	5.vehicles_30_days	6.searches_30_days	7.latitude	8.longitude	9.state_code	10.leaflet object	11.playing	12.line group
@@ -64,6 +70,7 @@ import "../styles/global.css";
 
 
 		var conn_layer = L.layerGroup();
+		var conn_dist = L.layerGroup();
 		var dot_layer = L.layerGroup();
 
 		function hoverDept(dept){
@@ -72,7 +79,7 @@ import "../styles/global.css";
 				 dashArray: '5',
 				 fillOpacity: 1,
 				 weight: 2,
-				 color: 'white'
+				 color: 'black'
 			})
 		}
 
@@ -80,11 +87,50 @@ import "../styles/global.css";
 			dept.setStyle({
 				 radius: 5,
 				 fillOpacity: 0.8,
-				 color: 'transparent',
+				 color: 'black',
 				 fillColor: '#5987bd',
 				 dashArray: '',
-				 weight: 0,
+				 weight: 1,
 			})
+		}
+
+		// https://stackoverflow.com/questions/18883601/function-to-calculate-distance-between-two-coordinates
+		function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+			var R = 6371; // Radius of the earth in km
+			var dLat = deg2rad(lat2-lat1);  // deg2rad below
+			var dLon = deg2rad(lon2-lon1); 
+			var a = 
+				Math.sin(dLat/2) * Math.sin(dLat/2) +
+				Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+				Math.sin(dLon/2) * Math.sin(dLon/2)
+				; 
+			var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+			var d = R * c; // Distance in km
+			return d;
+		}
+
+		function deg2rad(deg) {
+			return deg * (Math.PI/180)
+		}
+
+		function distToHexColor(value) {
+    		value = Math.max(0, Math.min(2000, value));
+			let hue = 120 - (value / 2000) * 120;
+			let h = hue / 360, s = 1, l = 0.5;
+			let q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+			let p = 2 * l - q;
+			let hueToRgb = (p, q, t) => {
+				if (t < 0) t += 1;
+				if (t > 1) t -= 1;
+				if (t < 1 / 6) return p + (q - p) * 6 * t;
+				if (t < 1 / 2) return q;
+				if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+				return p;
+			};
+			let r = hueToRgb(p, q, h + 1 / 3);
+			let g = hueToRgb(p, q, h);
+			let b = hueToRgb(p, q, h - 1 / 3);
+			return "#" + ((1 << 24) | (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255)).toString(16).slice(1).toUpperCase();
 		}
 
 		departments.forEach(dept => {
@@ -124,7 +170,13 @@ import "../styles/global.css";
 
 						// Adding connection line
 						conn_layer.addLayer(L.polyline([p1,p2],{
-							color: "white",
+							color: "red",
+							opacity: 0.1,
+							weight: 1
+						}).bringToBack())
+
+						conn_dist.addLayer(L.polyline([p1,p2],{
+							color: distToHexColor(getDistanceFromLatLonInKm(p1[0], p1[1], p2[0], p2[1])),
 							opacity: 0.1,
 							weight: 1
 						}).bringToBack())
@@ -157,11 +209,11 @@ import "../styles/global.css";
 		var overlayMaps = {
 			"Departments": dept_layer,
 			"Connections": conn_layer,
+			"Conn. Distance": conn_dist,
 			"Dots (R=Recv)": dot_layer
 		};
-		
-		// dept_layer.bringToFront()
 
+		map.addLayer(conn_dist);
 		map.addLayer(dept_layer);
 
 		var layerControl = L.control.layers(null, overlayMaps).addTo(map);
