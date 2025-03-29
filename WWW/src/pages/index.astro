@@ -27,66 +27,68 @@ import "../styles/global.css";
 				<div id="info"></div>
 			</div>
 		</div>
-		<div class="w-full text-lg pt-5 bg-backdrop border-t-2 border-white flex items-start justify-center gap-5 text-white">
-			<div>
-				<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Features:</b></h1>
-				<div class="flex flex-col">
-					<div class="flex gap-2">
-						<input id="ctrl_depts" type="checkbox" name="depts"/>
-						<label for="ctrl_depts">Departments</label>
-					</div>
-	
-					<div class="flex gap-2">
-						<input id="ctrl_conns" type="checkbox" name="depts" checked/>
-						<label for="ctrl_conns">Connections</label>
-					</div>
-	
-					<div class="flex gap-2">
-						<input id="ctrl_dots" type="checkbox" name="depts"/>
-						<label for="ctrl_dots">Sharing Dots</label>
-					</div>
-				</div>
-			</div>
-			<div>
-				<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Department Style:</b></h1>
-				<div class="flex flex-col">
-					<div class="flex gap-2">
-						<input id="dept_plain" type="radio" name="dept_style" checked>
-						<label for="dept_plain">Plain</label>
-					</div>
-					<div class="flex gap-2">
-						<input id="dept_conns" type="radio" name="dept_style">
-						<label for="dept_conns"># Connections</label>
-					</div>
-					<div class="flex gap-2">
-						<input id="dept_searches" type="radio" name="dept_style">
-						<label for="dept_searches"># Searches</label>
+		<div>
+			<div class="w-full text-lg pt-5 bg-backdrop border-t-2 border-white flex items-start justify-center gap-5 text-white">
+				<div>
+					<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Features:</b></h1>
+					<div class="flex flex-col">
+						<div class="flex gap-2">
+							<input id="ctrl_depts" type="checkbox" name="depts"/>
+							<label for="ctrl_depts">Departments</label>
+						</div>
+		
+						<div class="flex gap-2">
+							<input id="ctrl_conns" type="checkbox" name="depts" checked/>
+							<label for="ctrl_conns">Connections</label>
+						</div>
+		
+						<div class="flex gap-2">
+							<input id="ctrl_dots" type="checkbox" name="depts"/>
+							<label for="ctrl_dots">Sharing Dots</label>
+						</div>
 					</div>
 				</div>
-			</div>
-			<div>
-				<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Connection Style:</b></h1>
-				<div class="flex flex-col">
-					<div class="flex gap-2">
-						<input id="conn_plain" type="radio" name="conn_style">
-						<label for="conn_plain">Plain</label>
+				<div>
+					<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Department Style:</b></h1>
+					<div class="flex flex-col">
+						<div class="flex gap-2">
+							<input id="dept_plain" type="radio" name="dept_style" checked>
+							<label for="dept_plain">Plain</label>
+						</div>
+						<div class="flex gap-2">
+							<input id="dept_conns" type="radio" name="dept_style">
+							<label for="dept_conns"># Connections</label>
+						</div>
+						<div class="flex gap-2">
+							<input id="dept_searches" type="radio" name="dept_style">
+							<label for="dept_searches"># Searches</label>
+						</div>
 					</div>
-					<div class="flex gap-2">
-						<input id="conn_distance" type="radio" name="conn_style" checked>
-						<label for="conn_distance">Distance</label>
-					</div>
-					<div class="flex gap-2">
-						<label for="conn_opacity">Opacity</label>
-						<input id="conn_opacity" type="range" name="conn_opacity" value=0.1 min=0.01 max=1 step=0.01>
-					</div>
-					<div class="flex gap-2">
-						<label for="conn_weight">Weight</label>
-						<input id="conn_weight" type="range" name="conn_weight" value=1 min=0.5 max=10 step=0.1>
+				</div>
+				<div>
+					<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Connection Style:</b></h1>
+					<div class="flex flex-col">
+						<div class="flex gap-2">
+							<input id="conn_plain" type="radio" name="conn_style">
+							<label for="conn_plain">Plain</label>
+						</div>
+						<div class="flex gap-2">
+							<input id="conn_distance" type="radio" name="conn_style" checked>
+							<label for="conn_distance">Distance</label>
+						</div>
+						<div class="flex gap-2">
+							<label for="conn_opacity">Opacity</label>
+							<input id="conn_opacity" type="range" name="conn_opacity" value=0.1 min=0.01 max=1 step=0.01>
+						</div>
+						<div class="flex gap-2">
+							<label for="conn_weight">Weight</label>
+							<input id="conn_weight" type="range" name="conn_weight" value=1 min=0.5 max=10 step=0.1>
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div>
+	</divc>
 
 	<script>
 		// https://stackoverflow.com/questions/53307322/leaflet-polyline-arrows
@@ -195,9 +197,14 @@ import "../styles/global.css";
 			return "#" + ((1 << 24) | (Math.round(r * 255) << 16) | (Math.round(g * 255) << 8) | Math.round(b * 255)).toString(16).slice(1).toUpperCase();
 		}
 
+		map.createPane("departments_pane")
+		map.getPane("departments_pane").style.zIndex = 650;
+
 		departments.forEach(dept => {
 			// dept[10] = L.marker([dept[7],dept[8]])
-			dept[10] = L.circleMarker([dept[7], dept[8]])
+			dept[10] = L.circleMarker([dept[7], dept[8]], {
+				pane: "departments_pane"
+			})
 			leaveDept(dept[10])
 
 			dept[10].bindPopup(`
@@ -234,11 +241,13 @@ import "../styles/global.css";
 	
 								tempLayerGroup.addLayer(L.polyline([p1, p2], {
 									color: "orange",
+									dashArray: "10,10",
 									opacity: 0.8,
-									weight: 2
+									weight: 2,
+									interactive: false
 								}).bringToBack());
 
-								tempLayerGroup.addLayer(L.featureGroup(getArrows([p1, p2], 'orange', 2,map)))
+								tempLayerGroup.addLayer(L.featureGroup(getArrows([p1, p2], 'orange', 3,map)))
 							}
 						} else {
 							let p2 = db.exec(`SELECT latitude, longitude FROM departments WHERE name = "${connection[1]}" AND latitude IS NOT NULL`)[0];
@@ -248,11 +257,12 @@ import "../styles/global.css";
 								// console.log(connection)
 								
 								tempLayerGroup.addLayer(L.polyline([p1, p2], {
-									color: "purple",
+									color: "green",
 									opacity: 0.8,
-									weight: 2
+									weight: 2,
+									interactive: false
 								}).bringToBack());
-								tempLayerGroup.addLayer(L.featureGroup(getArrows([p2, p1], 'purple', 2,map)))
+								tempLayerGroup.addLayer(L.featureGroup(getArrows([p2, p1], 'green', 2,map)))
 								// L.featureGroup(getArrows([p1, p2], 'red', 3,map)).addTo(map);
 							}
 
@@ -303,13 +313,15 @@ import "../styles/global.css";
 						conn_layer.addLayer(L.polyline([p1,p2],{
 							color: "white",
 							opacity: 0.1,
-							weight: 1
+							weight: 1,
+							interactive: false
 						}).bringToBack())
 
 						conn_dist.addLayer(L.polyline([p1,p2],{
 							color: distToHexColor(getDistanceFromLatLonInKm(p1[0], p1[1], p2[0], p2[1])),
 							opacity: 0.1,
-							weight: 1
+							weight: 1,
+							interactive: false
 						}).bringToBack())
 
 						// Adding start dot
@@ -317,7 +329,8 @@ import "../styles/global.css";
 							color: 'transparent',
 							fillColor: 'green',
 							fillOpacity: 0.5,
-							radius: 100
+							radius: 100,
+							interactive: false
 						}))
 
 						// Adding end dot
@@ -325,7 +338,8 @@ import "../styles/global.css";
 							color: 'transparent',
 							fillColor: 'red',
 							fillOpacity: 0.5,
-							radius: 100
+							radius: 100,
+							interactive: false
 						}))
                     }
 
