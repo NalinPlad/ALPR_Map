@@ -65,7 +65,7 @@ import "../styles/global.css";
 				</div>
 			</div>
 			<div>
-				<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Connections Style:</b></h1>
+				<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Connection Style:</b></h1>
 				<div class="flex flex-col">
 					<div class="flex gap-2">
 						<input id="conn_plain" type="radio" name="conn_style">
@@ -74,6 +74,14 @@ import "../styles/global.css";
 					<div class="flex gap-2">
 						<input id="conn_distance" type="radio" name="conn_style" checked>
 						<label for="conn_distance">Distance</label>
+					</div>
+					<div class="flex gap-2">
+						<label for="conn_opacity">Opacity</label>
+						<input id="conn_opacity" type="range" name="conn_opacity" value=0.1 min=0.1 max=1 step=0.01>
+					</div>
+					<div class="flex gap-2">
+						<label for="conn_weight">Weight</label>
+						<input id="conn_weight" type="range" name="conn_weight" value=0.1 min=0.1 max=1 step=0.01>
 					</div>
 				</div>
 			</div>
@@ -270,6 +278,7 @@ import "../styles/global.css";
 		// var layerControl = L.control.layers(null, overlayMaps).addTo(map);
 
 		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
+		// const first_time = 1735665250187
 		const last_time = db.exec("SELECT time FROM searches ORDER BY time DESC LIMIT 1")[0].values[0][0]
 
 		const searches = db.exec("SELECT * from searches ORDER BY time ASC")[0].values;
@@ -283,10 +292,10 @@ import "../styles/global.css";
 		slider.step = 1
 		
 
-		slider.value = first_time
-		label.innerText = Date(first_time)
+		slider.value = 1735665250187
+		label.innerText = Date(1735665250187)
 
-		let c_time = first_time
+		let c_time = 1735665250187
 
 		// 0.search_dept	1.search_id	2.user_id	3.time	4.camera_count	5.reason
 		function draw_searches(time){
@@ -329,6 +338,7 @@ import "../styles/global.css";
 		slider.addEventListener("input", _ => {
 			c_time = parseInt(slider.value)
 			draw_searches(c_time)
+			console.log(c_time)
 		})
 
 		draw_searches(c_time)
