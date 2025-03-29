@@ -88,8 +88,11 @@ import "../styles/global.css";
 		</div>
 	</div>
 
-
 	<script>
+		// https://stackoverflow.com/questions/53307322/leaflet-polyline-arrows
+		function getArrows(n,t,o,r){if(void 0===typeof n||null==n||!n.length||n.length<2)return[];void 0!==o&&null!=o||(o=1),t=void 0===t||null==t?"":"color:"+t;for(var i=[],e=1;e<n.length;e++)for(var a=L.divIcon({className:"arrow-icon",bgPos:[5,5],html:'<div style="'+t+';transform: rotate('+getAngle(n[e-1],n[e],-1)+'deg)">▶</div>'}),u=1;u<=o;u++)i.push(L.marker(myMidPoint(n[e],n[e-1],u/(o+1),r),{icon:a}));i.push(L.marker(n[0],{icon:L.divIcon({className:"arrow-icon",bgPos:[5,5],html:'<div style="'+t+';transform: rotate('+getAngle(n[0],n[1],-1)+'deg)">▶</div>'})}));i.push(L.marker(n[n.length-1],{icon:L.divIcon({className:"arrow-icon",bgPos:[5,5],html:'<div style="'+t+';transform: rotate('+getAngle(n[n.length-2],n[n.length-1],-1)+'deg)">▶</div>'})}));return i}function getAngle(n,t,o){var r=t[0]-n[0],i=Math.cos(Math.PI/180*n[0])*(t[1]-n[1]);return(Math.atan2(r,i)/Math.PI*180*o).toFixed(2)}function myMidPoint(n,t,o,r){if(!r)throw new Error("map is not defined");var i,e,a,u,c;if(0===(i=distanceTo(a=r.project(new L.latLng(n)),u=r.project(new L.latLng(t)))*o))return r.unproject(a);if((e=distanceTo(a,u))>i){c=(e-i)/e;var l=r.unproject(new Point(u.x-c*(u.x-a.x),u.y-c*(u.y-a.y)));return[l.lat,l.lng]}}function distanceTo(n,t){var o=t.x-n.x,r=t.y-n.y;return Math.sqrt(o*o+r*r)}function toPoint(n,t,o){return n instanceof Point?n:isArray(n)?new Point(n[0],n[1]):null==n?n:"object"==typeof n&&"x"in n&&"y"in n?new Point(n.x,n.y):new Point(n,t,o)}function Point(n,t,o){this.x=o?Math.round(n):n,this.y=o?Math.round(t):t}
+
+
 		// https://github.com/xtk93x/Leaflet.TileLayer.ColorFilter
 		"use strict";L.TileLayer.ColorFilter=L.TileLayer.extend({intialize:function(t,i){L.TileLayer.prototype.initialize.call(this,t,i)},colorFilter:function(){var r=["blur:px","brightness:%","bright:brightness:%","bri:brightness:%","contrast:%","con:contrast:%","grayscale:%","gray:grayscale:%","hue-rotate:deg","hue:hue-rotate:deg","hue-rotation:hue-rotate:deg","invert:%","inv:invert:%","opacity:%","op:opacity:%","saturate:%","saturation:saturate:%","sat:saturate:%","sepia:%","sep:sepia:%"];return(this.options.filter?this.options.filter:[]).map(function(t){var i=t.toLowerCase().split(":");if(2===i.length){var e=r.find(function(t){return t.split(":")[0]===i[0]});if(e)return e=e.split(":"),i[1]+=/^\d+$/.test(i[1])?e[e.length-1]:"","".concat(e[e.length-2],"(").concat(i[1],")")}return""}).join(" ")},_initContainer:function(){L.TileLayer.prototype._initContainer.call(this);this._container.style.filter=this.colorFilter()},updateFilter:function(t){this.options.filter=t,this._container&&(this._container.style.filter=this.colorFilter())}}),L.tileLayer.colorFilter=function(t,i){return new L.TileLayer.ColorFilter(t,i)};
 		
@@ -206,6 +209,75 @@ import "../styles/global.css";
 
 			dept[10].on('mouseover', _ => {hoverDept(dept[10])});
 			dept[10].on('mouseout', _ => {leaveDept(dept[10])});
+
+			const tempLayerGroup = L.layerGroup();
+
+			dept[10].on('popupopen', () => {
+				const p1 = [dept[7], dept[8]];
+
+				if(document.querySelector("#ctrl_conns").checked){
+					map.removeLayer(conn_layer);
+					map.removeLayer(conn_dist);
+				}
+
+				let connections = db.exec("SELECT * FROM connections WHERE dept_a = \"" + dept[2] + "\" OR dept_b = \"" + dept[2] + "\"")[0];
+				if (connections != undefined) {
+					connections = connections.values;
+
+					connections.forEach(connection => {
+						if(connection[1] == dept[2]) {
+							let p2 = db.exec(`SELECT latitude, longitude FROM departments WHERE name = "${connection[2]}" AND latitude IS NOT NULL`)[0];
+							if (p2 != undefined) {
+								p2 = p2.values[0];
+	
+								// console.log(connection)
+	
+								tempLayerGroup.addLayer(L.polyline([p1, p2], {
+									color: "orange",
+									opacity: 0.8,
+									weight: 2
+								}).bringToBack());
+
+								tempLayerGroup.addLayer(L.featureGroup(getArrows([p1, p2], 'orange', 2,map)))
+							}
+						} else {
+							let p2 = db.exec(`SELECT latitude, longitude FROM departments WHERE name = "${connection[1]}" AND latitude IS NOT NULL`)[0];
+							if (p2 != undefined) {
+								p2 = p2.values[0];
+								
+								// console.log(connection)
+								
+								tempLayerGroup.addLayer(L.polyline([p1, p2], {
+									color: "purple",
+									opacity: 0.8,
+									weight: 2
+								}).bringToBack());
+								tempLayerGroup.addLayer(L.featureGroup(getArrows([p2, p1], 'purple', 2,map)))
+								// L.featureGroup(getArrows([p1, p2], 'red', 3,map)).addTo(map);
+							}
+
+						}
+					});
+				}
+
+				map.addLayer(tempLayerGroup);
+			});
+
+			dept[10].on('popupclose', () => {
+				map.removeLayer(tempLayerGroup);
+				tempLayerGroup.clearLayers();
+
+				// Re-show the original connection layers
+				if(document.querySelector("#ctrl_conns").checked){
+					if (document.querySelector("#conn_plain").checked) {
+						map.addLayer(conn_layer);
+					} else if (document.querySelector("#conn_distance").checked) {
+						map.addLayer(conn_dist);
+					}
+					// map.removeLayer(dept_layer);
+					// map.addLayer(dept_layer);
+				}
+			});
 
 			dept[11] = false
 
@@ -348,7 +420,7 @@ import "../styles/global.css";
 		var int = setInterval(_ => {
 			c_time += 1000 * 60;
 			draw_searches(c_time);
-		}, 200);
+		}, 1000);
 
 		const pauseButton = document.querySelector("#pausebutton");
 		pauseButton.value = "Pause  ⏸️";
