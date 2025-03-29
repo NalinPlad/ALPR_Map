@@ -5,7 +5,7 @@ import "../styles/global.css";
 
 <Layout>
 	<div class="h-screen w-screen max-w-full max-h-full flex flex-col">
-		<div class="flex h-5/6 w-full">
+		<div class="flex h-3/4 w-full">
 			<div id="map" class="w-3/4 h-full flex items-center justify-center text-5xl text-white font-mono">Loading Data...</div>
 			<div class="bg-backdrop border-l-2 border-white w-1/4 h-full p-2 overflow-y-scroll text-white">
 				<div>
@@ -27,8 +27,56 @@ import "../styles/global.css";
 				<div id="info"></div>
 			</div>
 		</div>
-		<div class="w-full h-1/6 bg-backdrop border-t-2 border-white flex flex-col items-center justify-center text-white">
-			
+		<div class="w-full text-lg pt-5 bg-backdrop border-t-2 border-white flex items-start justify-center gap-5 text-white">
+			<div>
+				<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Features:</b></h1>
+				<div class="flex flex-col">
+					<div class="flex gap-2">
+						<input id="ctrl_depts" type="checkbox" name="depts"/>
+						<label for="ctrl_depts">Departments</label>
+					</div>
+	
+					<div class="flex gap-2">
+						<input id="ctrl_conns" type="checkbox" name="depts" checked/>
+						<label for="ctrl_conns">Connections</label>
+					</div>
+	
+					<div class="flex gap-2">
+						<input id="ctrl_dots" type="checkbox" name="depts"/>
+						<label for="ctrl_dots">Sharing Dots</label>
+					</div>
+				</div>
+			</div>
+			<div>
+				<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Department Style:</b></h1>
+				<div class="flex flex-col">
+					<div class="flex gap-2">
+						<input id="dept_plain" type="radio" name="dept_style" checked>
+						<label for="dept_plain">Plain</label>
+					</div>
+					<div class="flex gap-2">
+						<input id="dept_conns" type="radio" name="dept_style">
+						<label for="dept_conns"># Connections</label>
+					</div>
+					<div class="flex gap-2">
+						<input id="dept_searches" type="radio" name="dept_style">
+						<label for="dept_searches"># Searches</label>
+					</div>
+				</div>
+			</div>
+			<div>
+				<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Connections Style:</b></h1>
+				<div class="flex flex-col">
+					<div class="flex gap-2">
+						<input id="conn_plain" type="radio" name="conn_style">
+						<label for="conn_plain">Plain</label>
+					</div>
+					<div class="flex gap-2">
+						<input id="conn_distance" type="radio" name="conn_style" checked>
+						<label for="conn_distance">Distance</label>
+					</div>
+				</div>
+			</div>
 		</div>
 	</div>
 
@@ -51,7 +99,7 @@ import "../styles/global.css";
 
 
 		
-		var map = L.map('map').setView([39.6089, -100.0181], 1);
+		var map = L.map('map').setView([37.844606307712596, -101.18701692791295], 2);
 
 		var dept_pins = []
         let d_hist = []
@@ -82,7 +130,7 @@ import "../styles/global.css";
 				 dashArray: '5',
 				 fillOpacity: 1,
 				 weight: 2,
-				 color: 'black'
+				 color: 'white'
 			})
 		}
 
@@ -142,7 +190,7 @@ import "../styles/global.css";
 			leaveDept(dept[10])
 
 			dept[10].bindPopup(`
-				<h3>${dept[2]}</h3>
+				<h3 class="text-black cursor-pointer underline"><a href="https://transparency.flocksafety.com/${dept[0]}" target="_blank" rel="noopener noreferrer">${dept[2]}</a></h3>
 				${dept[4] ? `<p><b>${dept[4].toLocaleString()}</b> cameras</p>` : ""}
 				${dept[5] ? `<p><b>${dept[5].toLocaleString()}</b> vehicles past 30 days</p>` : ""}
 				${dept[6] ? `<p><b>${dept[6].toLocaleString()}</b> searches past 30 days</p>` : ""}
@@ -219,7 +267,7 @@ import "../styles/global.css";
 		map.addLayer(conn_dist);
 		// map.addLayer(dept_layer);
 
-		var layerControl = L.control.layers(null, overlayMaps).addTo(map);
+		// var layerControl = L.control.layers(null, overlayMaps).addTo(map);
 
 		const first_time = db.exec("SELECT time FROM searches ORDER BY time ASC LIMIT 1")[0].values[0][0]
 		const last_time = db.exec("SELECT time FROM searches ORDER BY time DESC LIMIT 1")[0].values[0][0]
@@ -254,7 +302,7 @@ import "../styles/global.css";
 			const year = d.getFullYear();
 			label.innerText = `${month} ${date}${suffix} ${year}, ${hours}:${minutes} ${ampm}`;
 
-			searches.filter((search) => (search[3] <= time + 1000*60*60*1 && search[3] >= time - 1000*60*60*1)).forEach(search => {
+			searches.filter((search) => (search[3] <= time && search[3] >= time - 1000*60*60*2)).forEach(search => {
 				// if(search[3] <= time && search[3] >= time - 1*60*60*1000) {
 					var dp = departments.filter(d => d[0] == search[0])[0]
 
@@ -293,20 +341,65 @@ import "../styles/global.css";
 		}, 200);
 
 		const pauseButton = document.querySelector("#pausebutton");
-		pauseButton.value = "Stop  ⏸️";
+		pauseButton.value = "Pause  ⏸️";
 
 		pauseButton.addEventListener("click", () => {
 			if (running) {
 				clearInterval(int);
-				pauseButton.value = "Play  ▶️";
+				pauseButton.value = "Resume  ▶️";
 			} else {
 				int = setInterval(_ => {
 					c_time += 1000 * 60;
 					draw_searches(c_time);
 				}, 200);
-				pauseButton.value = "Stop  ⏸️";
+				pauseButton.value = "Pause  ⏸️";
 			}
 			running = !running;
+		});
+
+		// Checkbox controls for layers
+		document.querySelector("#ctrl_depts").addEventListener("change", (e) => {
+			if (e.target.checked) {
+				map.addLayer(dept_layer);
+			} else {
+				map.removeLayer(dept_layer);
+			}
+		});
+
+		document.querySelector("#ctrl_conns").addEventListener("change", (e) => {
+			if (e.target.checked) {
+				if (document.querySelector("#conn_plain").checked) {
+					map.addLayer(conn_layer);
+				} else if (document.querySelector("#conn_distance").checked) {
+					map.addLayer(conn_dist);
+				}
+			} else {
+				map.removeLayer(conn_layer);
+				map.removeLayer(conn_dist);
+			}
+		});
+
+		document.querySelector("#ctrl_dots").addEventListener("change", (e) => {
+			if (e.target.checked) {
+				map.addLayer(dot_layer);
+			} else {
+				map.removeLayer(dot_layer);
+			}
+		});
+
+		// Radio button controls for connection styles
+		document.querySelector("#conn_plain").addEventListener("change", (e) => {
+			if (e.target.checked && document.querySelector("#ctrl_conns").checked) {
+				map.removeLayer(conn_dist);
+				map.addLayer(conn_layer);
+			}
+		});
+
+		document.querySelector("#conn_distance").addEventListener("change", (e) => {
+			if (e.target.checked && document.querySelector("#ctrl_conns").checked) {
+				map.removeLayer(conn_layer);
+				map.addLayer(conn_dist);
+			}
 		});
 
 
