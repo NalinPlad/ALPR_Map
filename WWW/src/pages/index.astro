@@ -27,8 +27,8 @@ import "../styles/global.css";
 				<div id="info"></div>
 			</div>
 		</div>
-		<div>
-			<div class="w-full text-lg pt-5 bg-backdrop border-t-2 border-white flex items-start justify-center gap-5 text-white">
+		<div class="w-full border-white border-t-2 text-white flex items-center justify-around gap-5 bg-backdrop">
+			<div class="text-lg pt-5 bg-backdrop flex items-start justify-center gap-5">
 				<div>
 					<h1 class="p-2 bg-backdark text-amber-300 w-fit rounded-lg font-mono"><b>Features:</b></h1>
 					<div class="flex flex-col">
@@ -87,6 +87,12 @@ import "../styles/global.css";
 					</div>
 				</div>
 			</div>
+			<div class="text-lg">
+				<h1 id="dept_high_title" class="p-2 bg-backdark text-gray-600 font-mono w-fit rounded-lg font-bold mb-3">Department Highlight:</h1>
+				<div id="dept_high_info" class="text-sm">
+					<i>Turn on the department feature and click a department to see more detailed information</i>
+				</div>
+			</div>
 		</div>
 	</divc>
 
@@ -136,6 +142,9 @@ import "../styles/global.css";
 		var conn_layer = L.layerGroup();
 		var conn_dist = L.layerGroup();
 		var dot_layer = L.layerGroup();
+
+		var dept_num_sharing = L.layerGroup();
+		var dept_num_searches = L.layerGroup();
 
 		function hoverDept(dept){
 			dept.setStyle({
@@ -245,7 +254,7 @@ import "../styles/global.css";
 									opacity: 0.8,
 									weight: 2,
 									interactive: false
-								}).bringToBack());
+								}));
 
 								tempLayerGroup.addLayer(L.featureGroup(getArrows([p1, p2], 'orange', 3,map)))
 							}
