@@ -6,4 +6,5 @@
 🫥 automatic github action to run update script
 🫥 fix update script to update department data like vehicles_30_days and not just add searches
 🫥 simplemap page which just renders simple map for low end devices
+😐 favicon
 😐 set up https://github.com/umami-software/umami unami analytics under analytics.ajith.fyi
