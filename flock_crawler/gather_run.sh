@@ -35,7 +35,7 @@ fi
 
 # Run your command (node gather + alert)
 # Adjust the node path if needed.
-node ./gather.js && osascript -e 'display alert "Just ran gather"'
+node ./gather_searches.js && osascript -e 'display alert "Just ran gather"'
 
 # Mark that we've run it today
 touch "$stamp_file"
